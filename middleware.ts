@@ -9,8 +9,9 @@ import { NextRequest, NextResponse } from "next/server";
  *                          link sent to the speaker, and by a one-time random state on the way back
  *  /r/<code>             — tracking links in captions
  *  /api/signups          — webinar sign-ups sent back; protected by SIGNUPS_KEY instead
+ *  /api/health           — the host's health check; only says "ok"
  */
-const PUBLIC = ["/login", "/setup", "/api/media/", "/api/cron", "/api/oauth/", "/api/signups", "/connect", "/r/"];
+const PUBLIC = ["/api/health", "/login", "/setup", "/api/media/", "/api/cron", "/api/oauth/", "/api/signups", "/connect", "/r/"];
 const COOKIE = "social_session";
 
 const fromB64url = (s: string) => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));

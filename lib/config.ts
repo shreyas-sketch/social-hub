@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { one, run } from "@/db";
 
@@ -92,7 +93,8 @@ export function integrationStatus() {
     { name: "Claude API (scripts)", ok: !!env.anthropicKey(), need: "ANTHROPIC_API_KEY" },
     {
       name: "Captions (transcription)",
-      ok: env.transcribeEngine() === "none" ? false : env.transcribeEngine() === "openai" ? !!env.openaiKey() : true,
+      // For local captions, check the model file is really there (a missing model fails every edit).
+      ok: env.transcribeEngine() === "none" ? false : env.transcribeEngine() === "openai" ? !!env.openaiKey() : fs.existsSync(env.whisperModel()),
       need: env.transcribeEngine() === "openai" ? "OPENAI_API_KEY" : "WHISPER_CPP_BIN + WHISPER_MODEL on the server",
     },
     { name: "Meta (Instagram + Facebook)", ok: !!(env.metaAppId() && env.metaAppSecret()), need: "META_APP_ID, META_APP_SECRET" },

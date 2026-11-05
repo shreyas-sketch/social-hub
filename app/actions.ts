@@ -1,4 +1,5 @@
 "use server";
+import nodeCrypto from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -62,6 +63,13 @@ function safeNext(next: string) {
   }
 }
 
+/** Compares two secrets without leaking how much of them matched. */
+function safeEqual(a: string, b: string) {
+  const x = nodeCrypto.createHash("sha256").update(a).digest();
+  const y = nodeCrypto.createHash("sha256").update(b).digest();
+  return nodeCrypto.timingSafeEqual(x, y);
+}
+
 /** Slows down password guessing: 8 wrong tries per email in 15 minutes, then a wait. */
 const tries = new Map<string, { n: number; until: number }>();
 
@@ -88,11 +96,15 @@ export async function logout() {
 
 export async function setupOwner(_: Result, fd: FormData): Promise<Result> {
   if (userCount() > 0) return { ok: false, msg: "Already set up — sign in instead." };
-  if (process.env.SETUP_KEY && s(fd, "key") !== process.env.SETUP_KEY) return { ok: false, msg: "Open the setup link printed by the server setup script (it has a key)." };
+  // On a public server the first visitor could otherwise claim the empty install, so a key is required there.
+  const setupKey = process.env.SETUP_KEY || "";
+  if (!setupKey && process.env.NODE_ENV === "production") return { ok: false, msg: "SETUP_KEY isn't set on the server. Set it, restart, then open /setup?key=<that value>." };
+  if (setupKey && !safeEqual(s(fd, "key"), setupKey)) return { ok: false, msg: "Open the setup link printed by the server setup script (it has a key)." };
   const pw = s(fd, "password");
   if (pw.length < 10) return { ok: false, msg: "Use at least 10 characters for the password." };
-  const r = createUser(s(fd, "email"), s(fd, "name"), pw, "owner");
-  const id = Number(r.lastInsertRowid);
+  // Check and create in one step, so two people opening the setup link at once can't both become owner.
+  const id = tx(() => (userCount() > 0 ? 0 : Number(createUser(s(fd, "email"), s(fd, "name"), pw, "owner").lastInsertRowid)));
+  if (!id) return { ok: false, msg: "Already set up — sign in instead." };
   cookies().set(COOKIE, signSession(id), { httpOnly: true, sameSite: "lax", secure: env.appUrl().startsWith("https://"), path: "/", maxAge: 14 * 86400 });
   audit(id, "setup_owner", "user", id);
   redirect("/");

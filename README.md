@@ -89,7 +89,7 @@ Posting to Instagram needs a public https address (Meta downloads the video from
 
 ## Going live
 
-See **GOING-LIVE.md** — server setup in one script, then the platform apps (Meta, YouTube, LinkedIn, X) and the Claude API key.
+On Railway: see **RAILWAY.md**. On your own server: see **GOING-LIVE.md** — server setup in one script, then the platform apps (Meta, YouTube, LinkedIn, X) and the Claude API key.
 
 ## Checks
 
