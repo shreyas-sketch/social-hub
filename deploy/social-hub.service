@@ -1,0 +1,15 @@
+[Unit]
+Description=Social Hub (web)
+After=network.target
+
+[Service]
+Type=simple
+User=socialhub
+WorkingDirectory=__APP_DIR__
+EnvironmentFile=/etc/social-hub.env
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
